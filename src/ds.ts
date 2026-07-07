@@ -9,10 +9,12 @@ export interface IEventItem extends Types.SP.ListItemOData {
     EndDate: string;
     EventStatus: { results: string };
     IsCancelled: boolean;
+    RegistrationClosed: boolean;
     Location: string;
-    OpenSpots: string;
-    Capacity: string;
+    OpenSpots: number;
+    Capacity: number;
     CreatedBy: string;
+    Modified: string;
     Editor: { Id: number, Title: string };
     POC: {
         results: {
@@ -49,6 +51,10 @@ export interface IConfiguration {
     hideHeader?: boolean;
     hideImage?: boolean;
     membersGroupName?: string;
+    eventList?: string;
+    userRegistrationList?: string;
+    userRegistrationEventField?: string;
+    userRegistrationEventType?: string;
 }
 /**
  * Data Source
@@ -114,15 +120,15 @@ export class DataSource {
 
             // Load the data
             if (this._isAdmin) {
-                web.Lists(Strings.Lists.Events).Items().query({
+                web.Lists(DataSource.Configuration.eventList).Items().query({ //was String Events
                     Expand: ["Editor", "AttachmentFiles", "POC", "RegisteredUsers", "WaitListedUsers"],
                     GetAllItems: true,
                     OrderBy: ["StartDate asc"],
                     Top: 5000,
                     Select: [
                         "*", "POC/Id", "POC/Title", "POC/EMail",
-                        "RegisteredUsers/Id", "RegisteredUsers/Title", "RegisteredUsers/EMail",
-                        "WaitListedUsers/Id", "WaitListedUsers/Title", "WaitListedUsers/EMail",
+                        "RegisteredUsers/Id", "RegisteredUsers/Title", //"RegisteredUsers/EMail",
+                        "WaitListedUsers/Id", "WaitListedUsers/Title", //"WaitListedUsers/EMail",
                         "Editor/Id", "Editor/Title",
                     ]
                 }).execute(
@@ -137,7 +143,7 @@ export class DataSource {
             }
             else {
                 let today = moment().toISOString();
-                web.Lists(Strings.Lists.Events).Items().query({
+                web.Lists(DataSource.Configuration.eventList).Items().query({ //was String Events
                     Expand: ["AttachmentFiles", "POC", "RegisteredUsers", "WaitListedUsers"],
                     Filter: `StartDate ge '${today}'`,
                     GetAllItems: true,
@@ -145,8 +151,8 @@ export class DataSource {
                     Top: 5000,
                     Select: [
                         "*", "POC/Id", "POC/Title",
-                        "RegisteredUsers/Id", "RegisteredUsers/Title", "RegisteredUsers/EMail",
-                        "WaitListedUsers/Id", "WaitListedUsers/Title", "WaitListedUsers/EMail"
+                        "RegisteredUsers/Id", "RegisteredUsers/Title", //"RegisteredUsers/EMail",
+                        "WaitListedUsers/Id", "WaitListedUsers/Title", //"WaitListedUsers/EMail"
                     ]
                 }).execute(
                     items => {
@@ -157,7 +163,7 @@ export class DataSource {
                 );
             }
             // Load the user permissions for the Events list
-            web.Lists(Strings.Lists.Events).getUserEffectivePermissions(this._userLoginName).execute(perm => {
+            web.Lists(DataSource.Configuration.eventList).getUserEffectivePermissions(this._userLoginName).execute(perm => { //was String Events
                 // Save the user permissions
                 this._eventRegPerms = perm.GetUserEffectivePermissions;
             }, () => {
@@ -274,6 +280,8 @@ export class DataSource {
 
                     // Set the configuration
                     this._cfg = cfg;
+                    if (this._cfg.eventList == null)
+                        this._cfg.eventList = Strings.Lists.Events;
 
                     // Resolve the request
                     resolve();
@@ -296,7 +304,7 @@ export class DataSource {
     static get ManagersUrl(): string { return ContextInfo.webServerRelativeUrl + "/_layouts/15/people.aspx?MembershipGroupId=" + this._managerId; };
     private static _memberId: number = null;
     static get MembersUrl(): string { return ContextInfo.webServerRelativeUrl + "/_layouts/15/people.aspx?MembershipGroupId=" + this._memberId; };
-    static get ListUrl(): string { return ContextInfo.webServerRelativeUrl + "/Lists/Events/AllItems.aspx" };
+    static get ListUrl(): string { return ContextInfo.webServerRelativeUrl + "/Lists/" + this.Configuration.eventList.replace(/ /g, '') };
     static loadSecurityGroupUrls(): PromiseLike<void> {
         return new Promise((resolve) => {
             let web = Web();

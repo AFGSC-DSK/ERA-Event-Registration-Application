@@ -1,3 +1,18 @@
+@media print {
+    /* Fix modal dialog printing of the roster */
+    .bs .modal-dialog-centered {
+        max-width:100%;
+    }
+
+    .bs .modal-content {
+            border:0;
+    }
+    .bs .modal-body > div.row:first-child {
+            padding-top:0 !important;
+            padding-bottom:0 !important;
+    }
+}
+
 .bs .btn-primary:hover {
     color: #fff;
     background-color: #004c86;

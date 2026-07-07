@@ -1,5 +1,5 @@
 import { InstallationRequired, LoadingDialog, Modal } from "dattatable";
-import { Components, Helper, Utility } from "gd-sprest-bs";
+import { Components, Helper, Utility, Web } from "gd-sprest-bs";
 import { calendarPlus } from "gd-sprest-bs/build/icons/svgs/calendarPlus";
 import { gearWideConnected } from "gd-sprest-bs/build/icons/svgs/gearWideConnected";
 import { sliders } from "gd-sprest-bs/build/icons/svgs/sliders";
@@ -127,7 +127,9 @@ export class Admin {
         {
           name: "SendEmail",
           label: "Send Email?",
-          type: Components.FormControlTypes.Switch
+          type: Components.FormControlTypes.Switch,
+          value: false,
+          isReadonly: true,
         }
       ]
     });
@@ -153,48 +155,55 @@ export class Admin {
             LoadingDialog.setBody("This dialog will close after the user(s) are removed.");
             LoadingDialog.show();
 
-            // Parse the waitlisted users
-            let usersToRemove: Components.ICheckboxGroupItem[] = formValues["Users"];
-            let waitlistedUsers = eventItem.WaitListedUsersId ? eventItem.WaitListedUsersId.results : [];
-            for (let i = 0; i < usersToRemove.length; i++) {
-              let userId = usersToRemove[i].data.Id;
+            //Check for changes first to make sure item capacity/users weren't changed
+            EventForms.checkForChanges(eventItem, onRefresh, () => {
+              // Parse the waitlisted users
+              let usersToRemove: Components.ICheckboxGroupItem[] = formValues["Users"];
+              let waitlistedUsers = eventItem.WaitListedUsersId ? eventItem.WaitListedUsersId.results : [];
+              for (let i = 0; i < usersToRemove.length; i++) {
+                let userId = usersToRemove[i].data.Id;
 
-              // Find the user
-              let idx = waitlistedUsers.indexOf(userId);
+                // Find the user
+                let idx = waitlistedUsers.indexOf(userId);
+                if (idx > -1) {
+                  Registration.findUserRegistrationAndDelete(eventItem, userId);
 
-              // Remove the user
-              waitlistedUsers.splice(idx, 1);
-            }
-
-            // Update the item
-            eventItem.update({
-              "WaitListedUsersId": { results: waitlistedUsers }
-            }).execute(() => {
-              // Refresh the dashboard
-              onRefresh();
-
-              console.log("sendEmail: " + sendEmail);
-              // See if we are sending an email
-              if (sendEmail) {
-                // Parse the users to delete
-                let usersToAdd: Components.ICheckboxGroupItem[] = formValues["Users"];
-                Helper.Executor(usersToAdd, user => {
-                  // Return a promise
-                  return new Promise((resolve, reject) => {
-                    // Send an email
-                    Registration.sendMail(eventItem, user.data.Id, false, false).then(() => {
-                      // Resolve the request
-                      resolve(null);
-                    }, reject);
-                  }).then(() => {
-                    // Close the dialog
-                    LoadingDialog.hide();
-                  });
-                });
+                  // Remove the user
+                  waitlistedUsers.splice(idx, 1);
+                }
               }
 
-              // Close the dialog
-              LoadingDialog.hide();
+              // Update the item
+              eventItem.update({
+                "WaitListedUsersId": { results: waitlistedUsers }
+              }).execute(() => {
+                // Refresh the dashboard
+                onRefresh();
+
+                console.log("sendEmail: " + sendEmail);
+                //No longer able to send email due to API deprecation
+                //// See if we are sending an email
+                // if (sendEmail) {
+                //   // Parse the users to delete
+                //   let usersToAdd: Components.ICheckboxGroupItem[] = formValues["Users"];
+                //   Helper.Executor(usersToAdd, user => {
+                //     // Return a promise
+                //     return new Promise((resolve, reject) => {
+                //       // Send an email
+                //       Registration.sendMail(eventItem, user.data.Id, false, false).then(() => {
+                //         // Resolve the request
+                //         resolve(null);
+                //       }, reject);
+                //     }).then(() => {
+                //       // Close the dialog
+                //       LoadingDialog.hide();
+                //     });
+                //   });
+                // }
+
+                // Close the dialog
+                LoadingDialog.hide();
+              });
             });
           }
         },
@@ -245,7 +254,9 @@ export class Admin {
         {
           name: "SendEmail",
           label: "Send Email?",
-          type: Components.FormControlTypes.Switch
+          type: Components.FormControlTypes.Switch,
+          value: false,
+          isReadonly: true
         }
       ]
     });
@@ -253,7 +264,7 @@ export class Admin {
     // Set the modal body
     Modal.setBody(form.el);
 
-Modal.setScrollable(true);
+    Modal.setScrollable(true);
 
     // Set the modal footer
     Modal.setFooter(Components.ButtonGroup({
@@ -274,47 +285,59 @@ Modal.setScrollable(true);
               LoadingDialog.setBody("This dialog will close after the user is registered.");
               LoadingDialog.show();
 
-              // Append the user
-              let userId = formValues["User"][0].Id;
-              let value = eventItem.RegisteredUsersId ? eventItem.RegisteredUsersId.results : [];
-              value.push(userId);
-              let values = {
-                "RegisteredUsersId": { results: value }
-              };
+              //Check for changes first to make sure item capacity/users weren't changed
+              EventForms.checkForChanges(eventItem, onRefresh, () => {
+                // Append the user
+                let userId = formValues["User"][0].Id;
+                let value = eventItem.RegisteredUsersId ? eventItem.RegisteredUsersId.results : [];
+                value.push(userId);
+                let values = {
+                  "RegisteredUsersId": { results: value }
+                };
 
-              // See if the user is waitlisted
-              let waitlist = eventItem.WaitListedUsersId ? eventItem.WaitListedUsersId.results : [];
-              for (let i = 0; i < waitlist.length; i++) {
-                if (waitlist[i] == userId) {
-                  // Remove the user
-                  waitlist.splice(i, 1);
+                // See if the user is waitlisted
+                let userWasWaitlisted = false;
+                let waitlist = eventItem.WaitListedUsersId ? eventItem.WaitListedUsersId.results : [];
+                for (let i = 0; i < waitlist.length; i++) {
+                  if (waitlist[i] == userId) {
+                    userWasWaitlisted = true;
 
-                  // Update the field value
-                  values["WaitListedUsersId"] = { results: waitlist };
-                  break;
+                    // Remove the user
+                    waitlist.splice(i, 1);
+
+                    // Update the field value
+                    values["WaitListedUsersId"] = { results: waitlist };
+                    break;
+                  }
                 }
-              }
 
-              // Update the item
-              eventItem.update(values).execute(() => {
-                // Refresh the dashboard
-                onRefresh();
+                if (userWasWaitlisted)
+                  Registration.setUserFromWaitlistToRegistered(eventItem, userId);
+                else
+                  Registration.addUserRegistration(eventItem, userId, "Registered");
 
-                // See if we are sending an email
-                if (formValues["SendEmail"]) {
-                  // Update the loading dialog
-                  LoadingDialog.setHeader("Sending Email");
-                  LoadingDialog.setBody("This dialog will close after the email is sent.");
+                // Update the item
+                eventItem.update(values).execute(() => {
+                  // Refresh the dashboard
+                  onRefresh();
 
-                  // Send an email
-                  Registration.sendMail(eventItem, userId, true, false).then(() => {
+                  // See if we are sending an email
+                  if (formValues["SendEmail"]) {
+                    //No longer able to send email due to API deprecation
+                    // // Update the loading dialog
+                    // LoadingDialog.setHeader("Sending Email");
+                    // LoadingDialog.setBody("This dialog will close after the email is sent.");
+
+                    // // Send an email
+                    // Registration.sendMail(eventItem, userId, true, false).then(() => {
+                    //   // Close the dialog
+                    //   LoadingDialog.hide();
+                    // });
+                  } else {
                     // Close the dialog
                     LoadingDialog.hide();
-                  });
-                } else {
-                  // Close the dialog
-                  LoadingDialog.hide();
-                }
+                  }
+                });
               });
             }
           }
@@ -411,12 +434,13 @@ Modal.setScrollable(true);
             }
           },
         },
-        {
-          text: " Send Email",
-          onClick: (button) => {
-            this.sendEmail(eventItem);
-          },
-        },
+        //No longer able to send email due to API deprecation
+        // {
+        //   text: " Send Email",
+        //   onClick: (button) => {
+        //     this.sendEmail(eventItem, onRefresh);
+        //   },
+        // },
         {
           text: " Manage Waitlist",
           isDisabled: eventItem.IsCancelled || eventItem.WaitListedUsersId == null,
@@ -444,8 +468,9 @@ Modal.setScrollable(true);
     }
   }
 
+  //No longer able to send email due to API deprecation
   // Sends an email to the event members
-  private sendEmail(eventItem: IEventItem) {
+  private sendEmail(eventItem: IEventItem, onRefresh: () => void) {
     // Set the modal header
     Modal.setHeader("Send Email")
 
@@ -511,69 +536,72 @@ Modal.setScrollable(true);
               LoadingDialog.setBody("This dialog will close after the email is sent.");
               LoadingDialog.show();
 
-              // Determine who we are sending emails to
-              let emailPOCs = false;
-              let emailMembers = false;
-              let emailRecipients = values["EmailRecipients"] as Components.ICheckboxGroupItem[];
-              for (let i = 0; i < emailRecipients.length; i++) {
-                let emailRecipient = emailRecipients[i];
-                if (emailRecipient.label.indexOf("POC") >= 0) { emailPOCs = true; }
-                else if (emailRecipient.label.indexOf("Member") >= 0) { emailMembers = true; }
-              }
-
-              // See if we are emailing POCs
-              let pocs = [];
-              if (emailPOCs) {
-                // Parse the pocs
-                for (let i = 0; i < eventItem.POC.results.length; i++) {
-                  // Append the user email
-                  pocs.push(eventItem.POC.results[i].EMail);
+              //Check for changes first to make sure item capacity/users weren't changed
+              EventForms.checkForChanges(eventItem, onRefresh, () => {
+                // Determine who we are sending emails to
+                let emailPOCs = false;
+                let emailMembers = false;
+                let emailRecipients = values["EmailRecipients"] as Components.ICheckboxGroupItem[];
+                for (let i = 0; i < emailRecipients.length; i++) {
+                  let emailRecipient = emailRecipients[i];
+                  if (emailRecipient.label.indexOf("POC") >= 0) { emailPOCs = true; }
+                  else if (emailRecipient.label.indexOf("Member") >= 0) { emailMembers = true; }
                 }
-              }
 
-              // See if we are emailing Members
-              let members = [];
-              if (emailMembers) {
-                // Parse the registered users
-                for (let i = 0; i < eventItem.RegisteredUsers.results.length; i++) {
-                  // Append the user email
-                  members.push(eventItem.RegisteredUsers.results[i].EMail);
+                // See if we are emailing POCs
+                let pocs = [];
+                if (emailPOCs) {
+                  // Parse the pocs
+                  for (let i = 0; i < eventItem.POC.results.length; i++) {
+                    // Append the user email
+                    pocs.push(eventItem.POC.results[i].EMail);
+                  }
                 }
-              }
 
-              // Email POCs or Members based on selection
-              if (emailMembers && emailPOCs) {
-                // Send the email
-                Utility().sendEmail({
-                  To: members,
-                  CC: pocs,
-                  Body: values["EmailBody"].replace(/\n/g, "<br />"),
-                  Subject: values["EmailSubject"]
-                }).execute(() => {
-                  // Close the loading dialog
-                  LoadingDialog.hide();
-                });
-              } else if (emailMembers && !emailPOCs) {
-                // Send the email
-                Utility().sendEmail({
-                  To: members,
-                  Body: values["EmailBody"].replace(/\n/g, "<br />"),
-                  Subject: values["EmailSubject"]
-                }).execute(() => {
-                  // Close the loading dialog
-                  LoadingDialog.hide();
-                });
-              } else if (!emailMembers && emailPOCs) {
-                // Send the email
-                Utility().sendEmail({
-                  To: pocs,
-                  Body: values["EmailBody"].replace(/\n/g, "<br />"),
-                  Subject: values["EmailSubject"]
-                }).execute(() => {
-                  // Close the loading dialog
-                  LoadingDialog.hide();
-                });
-              }
+                // See if we are emailing Members
+                let members = [];
+                if (emailMembers) {
+                  // Parse the registered users
+                  for (let i = 0; i < eventItem.RegisteredUsers.results.length; i++) {
+                    // Append the user email
+                    members.push(eventItem.RegisteredUsers.results[i].EMail);
+                  }
+                }
+
+                // Email POCs or Members based on selection
+                if (emailMembers && emailPOCs) {
+                  // Send the email
+                  Utility().sendEmail({
+                    To: members,
+                    CC: pocs,
+                    Body: values["EmailBody"].replace(/\n/g, "<br />"),
+                    Subject: values["EmailSubject"]
+                  }).execute(() => {
+                    // Close the loading dialog
+                    LoadingDialog.hide();
+                  });
+                } else if (emailMembers && !emailPOCs) {
+                  // Send the email
+                  Utility().sendEmail({
+                    To: members,
+                    Body: values["EmailBody"].replace(/\n/g, "<br />"),
+                    Subject: values["EmailSubject"]
+                  }).execute(() => {
+                    // Close the loading dialog
+                    LoadingDialog.hide();
+                  });
+                } else if (!emailMembers && emailPOCs) {
+                  // Send the email
+                  Utility().sendEmail({
+                    To: pocs,
+                    Body: values["EmailBody"].replace(/\n/g, "<br />"),
+                    Subject: values["EmailSubject"]
+                  }).execute(() => {
+                    // Close the loading dialog
+                    LoadingDialog.hide();
+                  });
+                }
+              });
             }
           }
         },
@@ -643,53 +671,59 @@ Modal.setScrollable(true);
               LoadingDialog.setBody("This dialog will close after the user(s) are unregistered.");
               LoadingDialog.show();
 
-              // Parse the users to remove
-              let newUsers = [];
-              let usersToRemove = form.getValues()["Users"] as Components.ICheckboxGroupItem[];
-              let registeredUsers = eventItem.RegisteredUsersId ? eventItem.RegisteredUsersId.results : [];
-              let userIDRM;
-              for (let i = 0; i < registeredUsers.length; i++) {
-                let userId = registeredUsers[i];
-
+              //Check for changes first to make sure item capacity/users weren't changed
+              EventForms.checkForChanges(eventItem, onRefresh, () => {
                 // Parse the users to remove
-                let removeFl = false;
-                for (let j = 0; j < usersToRemove.length; j++) {
-                  // See if this user is being removed
-                  if (userId == usersToRemove[j].data.Id) {
-                    removeFl = true;
-                    break;
+                let newUsers = [] as number[];
+                let usersToRemove = form.getValues()["Users"] as Components.ICheckboxGroupItem[];
+                let registeredUsers = eventItem.RegisteredUsersId ? eventItem.RegisteredUsersId.results : [];
+                for (let i = 0; i < registeredUsers.length; i++) {
+                  let userId = registeredUsers[i];
+
+                  // Parse the users to remove
+                  let removeFl = false;
+                  for (let j = 0; j < usersToRemove.length; j++) {
+                    // See if this user is being removed
+                    if (userId == usersToRemove[j].data.Id) {
+                      removeFl = true;
+                      Registration.findUserRegistrationAndDelete(eventItem, userId);
+                      break;
+                    }
+                  }
+
+                  // See if this user is not being removed
+                  if (!removeFl) {
+                    // Keep user in array to be updated
+                    newUsers.push(userId);
                   }
                 }
 
-                // See if this user is not being removed
-                if (!removeFl) {
-                  // Remove the user
-                  newUsers.push(userId);
-                }
+                // Update the item
+                eventItem.update({
+                  "RegisteredUsersId": { results: newUsers }
+                }).execute(() => {
+                  // Refresh the dashboard
+                  onRefresh();
 
-                // Assign the local variable to a global variable
-                userIDRM = userId;
-              }
+                  //No longer able to send email due to API deprecation
+                  // // Update the loading dialog
+                  // LoadingDialog.setHeader("Sending Email(s)");
+                  // LoadingDialog.setBody("This dialog will close after the email(s) are sent.");
 
-              // Update the item
-              eventItem.update({
-                "RegisteredUsersId": { results: newUsers }
-              }).execute(() => {
-                // Refresh the dashboard
-                onRefresh();
-
-                // Update the loading dialog
-                LoadingDialog.setHeader("Sending Email");
-                LoadingDialog.setBody("This dialog will close after the email is sent.");
-
-                // Send an email
-                Registration.sendMail(eventItem, userIDRM, false, false).then(() => {
-                  // Close the dialog
-                  LoadingDialog.hide();
+                  // Helper.Executor(usersToRemove, user => {
+                  //   // Return a promise
+                  //   return new Promise((resolve, reject) => {
+                  //     // Send an email
+                  //     Registration.sendMail(eventItem, user.data.Id, false, false).then(() => {
+                  //       // Resolve the request
+                  //       resolve(null);
+                  //     }, reject);
+                  //   }).then(() => {
+                  //     // Close the dialog
+                  //     LoadingDialog.hide();
+                  //   });
+                  // });
                 });
-
-                // Close the dialog
-                LoadingDialog.hide();
               });
             }
           }

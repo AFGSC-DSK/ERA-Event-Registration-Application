@@ -23,7 +23,7 @@ export class App {
   // Constructor
   constructor(el: HTMLElement) {
     // Set the list name
-    ItemForm.ListName = Strings.Lists.Events;
+    ItemForm.ListName = DataSource.Configuration.eventList; //Strings.Lists.Events;
 
     // Set the global variables
     this._el = el;
@@ -218,8 +218,22 @@ export class App {
               let startReset = startDate.set({ hour: time.get('hour'), minute: time.get('minute') });
               let dateDiff = moment(startReset, "DD/MM/YYYY").diff(moment(currReset, "DD/MM/YYYY"), "hours");
 
+              // See if this event's registration has been closed by an admin
+              if (item.RegistrationClosed) {
+                // Add a break after title
+                let elBreak = document.createElement("br");
+                el.appendChild(elBreak);
+
+                // Render a badge
+                Components.Badge({
+                  el,
+                  content: "CLOSED",
+                  isPill: true,
+                  type: Components.BadgeTypes.Info
+                });
+              }
               // See if this event is cancelled
-              if (item.IsCancelled) {
+              else if (item.IsCancelled) {
                 // Add a break after title
                 let elBreak = document.createElement("br");
                 el.appendChild(elBreak);
@@ -229,7 +243,7 @@ export class App {
                   el,
                   content: "CANCELLED",
                   isPill: true,
-                  type: Components.BadgeTypes.Info
+                  type: Components.BadgeTypes.Warning
                 });
               }
               // Else, see if the event starts w/in 24 hours
@@ -301,7 +315,7 @@ export class App {
             title: "Open Spots",
             onRenderCell: (el, column, item: IEventItem) => {
               let capacity: number = item.Capacity
-                ? (parseInt(item.Capacity) as number)
+                ? item.Capacity
                 : 0;
               let numUsers: number = item.RegisteredUsersId
                 ? item.RegisteredUsersId.results.length
@@ -386,7 +400,7 @@ export class App {
                let startReset = startDate.set({ hour: time.get('hour'), minute: time.get('minute') });
                let dateDiff = moment(startReset, "DD/MM/YYYY").diff(moment(currReset, "DD/MM/YYYY"), "hours");
 
-              if (item.IsCancelled || (dateDiff <= 24 && dateDiff <= 0)) { return; }
+              if (item.IsCancelled || item.RegistrationClosed || (dateDiff <= 24 && dateDiff <= 0)) { return; }
               new Registration(el, item, () => { this.refresh(); });
             },
           },

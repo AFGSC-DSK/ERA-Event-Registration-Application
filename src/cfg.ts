@@ -1,6 +1,6 @@
 import { Helper, SPTypes } from "gd-sprest-bs";
 import Strings from "./strings";
-
+import { DataSource } from "./ds";
 /**
  * SharePoint Assets
  */
@@ -8,7 +8,7 @@ export const Configuration = Helper.SPConfig({
     ListCfg: [
         {
             ListInformation: {
-                Title: Strings.Lists.Events,
+                Title: Strings.Lists.Events, //DataSource.Configuration.eventList,
                 BaseTemplate: SPTypes.ListTemplateType.GenericList
             },
             CustomFields: [
@@ -72,30 +72,41 @@ export const Configuration = Helper.SPConfig({
                     showInNewForm: true
                 },
                 {
-                    name: "WaitListedUsers",
-                    title: "Wait Listed Users",
-                    type: Helper.SPCfgFieldType.User,
-                    multi: true,
-                    selectionMode: SPTypes.FieldUserSelectionType.PeopleOnly,
-                    showInViewForms: false,
-                    showInEditForm: false,
-                    showInNewForm: false,
+                    //Resolve issue with field created as User instead of UserMulti
+                    schemaXml: "<Field Type='UserMulti' Name='WaitListedUsers' StaticName='WaitListedUsers' DisplayName='Wait Listed Users' Mult='TRUE' UserSelectionMode='PeopleOnly' ShowField='ImnName' ShowInNewForm='FALSE' ShowInEditForm='FALSE' ShowInViewForms='FALSE' />",
+                    //name: "WaitListedUsers",
+                    //title: "Wait Listed Users",
+                    //type: Helper.SPCfgFieldType.User,
+                    //multi: true,
+                    //selectionMode: SPTypes.FieldUserSelectionType.PeopleOnly,
+                    //showInViewForms: false,
+                    //showInEditForm: false,
+                    //showInNewForm: false,
                 } as Helper.IFieldInfoUser,
                 {
-                    name: "RegisteredUsers",
-                    title: "Registered Users",
-                    type: Helper.SPCfgFieldType.User,
-                    multi: true,
-                    selectionMode: SPTypes.FieldUserSelectionType.PeopleOnly,
-                    showInViewForms: false,
-                    showInEditForm: false,
-                    showInNewForm: false,
+                    //Resolve issue with field created as User instead of UserMulti
+                    schemaXml: "<Field Type='UserMulti' Name='RegisteredUsers' StaticName='RegisteredUsers' DisplayName='Registered Users' Mult='TRUE' UserSelectionMode='PeopleOnly' ShowField='ImnName' ShowInNewForm='FALSE' ShowInEditForm='FALSE' ShowInViewForms='FALSE' />",
+                    // name: "RegisteredUsers",
+                    // title: "Registered Users",
+                    // type: Helper.SPCfgFieldType.User,
+                    // multi: true,
+                    // selectionMode: SPTypes.FieldUserSelectionType.PeopleOnly,
+                    // showInViewForms: false,
+                    // showInEditForm: false,
+                    // showInNewForm: false,
                 } as Helper.IFieldInfoUser,
                 {
                     name: "IsCancelled",
                     title: "Is Cancelled?",
                     type: Helper.SPCfgFieldType.Boolean,
                     showInEditForm: false,
+                    showInNewForm: false,
+                },
+                {
+                    name: "RegistrationClosed",
+                    title: "Registration Closed",
+                    type: Helper.SPCfgFieldType.Boolean,
+                    showInEditForm: true,
                     showInNewForm: false,
                 }
             ],
