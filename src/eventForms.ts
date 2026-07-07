@@ -86,7 +86,8 @@ export class EventForms {
                     name: "SendEmail",
                     label: "Send Email?",
                     type: Components.FormControlTypes.Switch,
-                    value: true
+                    value: false,
+                    isReadonly: true
                 }
             ]
         });
@@ -272,7 +273,8 @@ export class EventForms {
                     name: "SendEmail",
                     label: "Send Email?",
                     type: Components.FormControlTypes.Switch,
-                    value: true
+                    value: false,
+                    isReadonly: true
                 }
             ]
         });

@@ -28,6 +28,6 @@ const Strings = {
     SourceUrl: ContextInfo.webServerRelativeUrl + "/SiteAssets/Event-Registration/",
     SolutionUrl: ContextInfo.webServerRelativeUrl + "/SiteAssets/Event-Registration/index.html",
     //background: "https://usaf.dps.mil/sites/AFGSC-HQ/hq/ds/dsk/josh/EventReg2/SiteAssets/era.png",
-    Version: "2.2",
+    Version: "2.3",
 };
 export default Strings;

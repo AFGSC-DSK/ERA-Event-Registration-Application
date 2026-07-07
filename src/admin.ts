@@ -127,7 +127,9 @@ export class Admin {
         {
           name: "SendEmail",
           label: "Send Email?",
-          type: Components.FormControlTypes.Switch
+          type: Components.FormControlTypes.Switch,
+          value: false,
+          isReadonly: true,
         }
       ]
     });
@@ -179,24 +181,25 @@ export class Admin {
                 onRefresh();
 
                 console.log("sendEmail: " + sendEmail);
-                // See if we are sending an email
-                if (sendEmail) {
-                  // Parse the users to delete
-                  let usersToAdd: Components.ICheckboxGroupItem[] = formValues["Users"];
-                  Helper.Executor(usersToAdd, user => {
-                    // Return a promise
-                    return new Promise((resolve, reject) => {
-                      // Send an email
-                      Registration.sendMail(eventItem, user.data.Id, false, false).then(() => {
-                        // Resolve the request
-                        resolve(null);
-                      }, reject);
-                    }).then(() => {
-                      // Close the dialog
-                      LoadingDialog.hide();
-                    });
-                  });
-                }
+                //No longer able to send email due to API deprecation
+                //// See if we are sending an email
+                // if (sendEmail) {
+                //   // Parse the users to delete
+                //   let usersToAdd: Components.ICheckboxGroupItem[] = formValues["Users"];
+                //   Helper.Executor(usersToAdd, user => {
+                //     // Return a promise
+                //     return new Promise((resolve, reject) => {
+                //       // Send an email
+                //       Registration.sendMail(eventItem, user.data.Id, false, false).then(() => {
+                //         // Resolve the request
+                //         resolve(null);
+                //       }, reject);
+                //     }).then(() => {
+                //       // Close the dialog
+                //       LoadingDialog.hide();
+                //     });
+                //   });
+                // }
 
                 // Close the dialog
                 LoadingDialog.hide();
@@ -251,7 +254,9 @@ export class Admin {
         {
           name: "SendEmail",
           label: "Send Email?",
-          type: Components.FormControlTypes.Switch
+          type: Components.FormControlTypes.Switch,
+          value: false,
+          isReadonly: true
         }
       ]
     });
@@ -318,15 +323,16 @@ export class Admin {
 
                   // See if we are sending an email
                   if (formValues["SendEmail"]) {
-                    // Update the loading dialog
-                    LoadingDialog.setHeader("Sending Email");
-                    LoadingDialog.setBody("This dialog will close after the email is sent.");
+                    //No longer able to send email due to API deprecation
+                    // // Update the loading dialog
+                    // LoadingDialog.setHeader("Sending Email");
+                    // LoadingDialog.setBody("This dialog will close after the email is sent.");
 
-                    // Send an email
-                    Registration.sendMail(eventItem, userId, true, false).then(() => {
-                      // Close the dialog
-                      LoadingDialog.hide();
-                    });
+                    // // Send an email
+                    // Registration.sendMail(eventItem, userId, true, false).then(() => {
+                    //   // Close the dialog
+                    //   LoadingDialog.hide();
+                    // });
                   } else {
                     // Close the dialog
                     LoadingDialog.hide();
@@ -428,12 +434,13 @@ export class Admin {
             }
           },
         },
-        {
-          text: " Send Email",
-          onClick: (button) => {
-            this.sendEmail(eventItem, onRefresh);
-          },
-        },
+        //No longer able to send email due to API deprecation
+        // {
+        //   text: " Send Email",
+        //   onClick: (button) => {
+        //     this.sendEmail(eventItem, onRefresh);
+        //   },
+        // },
         {
           text: " Manage Waitlist",
           isDisabled: eventItem.IsCancelled || eventItem.WaitListedUsersId == null,
@@ -461,6 +468,7 @@ export class Admin {
     }
   }
 
+  //No longer able to send email due to API deprecation
   // Sends an email to the event members
   private sendEmail(eventItem: IEventItem, onRefresh: () => void) {
     // Set the modal header
@@ -697,23 +705,24 @@ export class Admin {
                   // Refresh the dashboard
                   onRefresh();
 
-                  // Update the loading dialog
-                  LoadingDialog.setHeader("Sending Email(s)");
-                  LoadingDialog.setBody("This dialog will close after the email(s) are sent.");
+                  //No longer able to send email due to API deprecation
+                  // // Update the loading dialog
+                  // LoadingDialog.setHeader("Sending Email(s)");
+                  // LoadingDialog.setBody("This dialog will close after the email(s) are sent.");
 
-                  Helper.Executor(usersToRemove, user => {
-                    // Return a promise
-                    return new Promise((resolve, reject) => {
-                      // Send an email
-                      Registration.sendMail(eventItem, user.data.Id, false, false).then(() => {
-                        // Resolve the request
-                        resolve(null);
-                      }, reject);
-                    }).then(() => {
-                      // Close the dialog
-                      LoadingDialog.hide();
-                    });
-                  });
+                  // Helper.Executor(usersToRemove, user => {
+                  //   // Return a promise
+                  //   return new Promise((resolve, reject) => {
+                  //     // Send an email
+                  //     Registration.sendMail(eventItem, user.data.Id, false, false).then(() => {
+                  //       // Resolve the request
+                  //       resolve(null);
+                  //     }, reject);
+                  //   }).then(() => {
+                  //     // Close the dialog
+                  //     LoadingDialog.hide();
+                  //   });
+                  // });
                 });
               });
             }

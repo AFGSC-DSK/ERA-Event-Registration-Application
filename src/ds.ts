@@ -127,8 +127,8 @@ export class DataSource {
                     Top: 5000,
                     Select: [
                         "*", "POC/Id", "POC/Title", "POC/EMail",
-                        "RegisteredUsers/Id", "RegisteredUsers/Title", "RegisteredUsers/EMail",
-                        "WaitListedUsers/Id", "WaitListedUsers/Title", "WaitListedUsers/EMail",
+                        "RegisteredUsers/Id", "RegisteredUsers/Title", //"RegisteredUsers/EMail",
+                        "WaitListedUsers/Id", "WaitListedUsers/Title", //"WaitListedUsers/EMail",
                         "Editor/Id", "Editor/Title",
                     ]
                 }).execute(
@@ -151,8 +151,8 @@ export class DataSource {
                     Top: 5000,
                     Select: [
                         "*", "POC/Id", "POC/Title",
-                        "RegisteredUsers/Id", "RegisteredUsers/Title", "RegisteredUsers/EMail",
-                        "WaitListedUsers/Id", "WaitListedUsers/Title", "WaitListedUsers/EMail"
+                        "RegisteredUsers/Id", "RegisteredUsers/Title", //"RegisteredUsers/EMail",
+                        "WaitListedUsers/Id", "WaitListedUsers/Title", //"WaitListedUsers/EMail"
                     ]
                 }).execute(
                     items => {

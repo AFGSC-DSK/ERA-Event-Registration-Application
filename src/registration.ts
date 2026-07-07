@@ -397,17 +397,24 @@ export class Registration {
                         () => {
                             // Send an email if a waitlisted user is now registered
                             if (userFromWaitlist)
-                                Registration.sendMail(this._item, userFromWaitlist, false, true, true);
-                            
-                            // Send email for current user
-                            //Registration.sendMail(this._item, userFromWaitlist, registeredStatus, false).then(() => {
-                            Registration.sendMail(this._item, 0, userIsRegistering, userIsWaitlisting).then(() => {
-                                // Hide the dialog
-                                LoadingDialog.hide();
+                                //No longer able to send email due to API deprecation
+                                //Registration.sendMail(this._item, userFromWaitlist, false, true, true);
 
-                                // Refresh the dashboard
-                                this._onRefresh();
-                            });
+                            //No longer able to send email due to API deprecation
+                            // Send email for current user
+                            // Registration.sendMail(this._item, 0, userIsRegistering, userIsWaitlisting).then(() => {
+                            //     // Hide the dialog
+                            //     LoadingDialog.hide();
+
+                            //     // Refresh the dashboard
+                            //     this._onRefresh();
+                            // });
+                            
+                            //Hide the dialog
+                            LoadingDialog.hide();
+
+                            // Refresh the dashboard
+                            this._onRefresh();
                         },
                         // Error
                         (error) => {
@@ -461,6 +468,7 @@ export class Registration {
         });
     }
 
+    //No longer able to send email due to API deprecation
     // Sends an email
     static sendMail(event: IEventItem, userId: number, userIsRegistering: boolean, userIsWaitlisted: boolean, addingFromWaitlist?: boolean): PromiseLike<void> {
         // Return a promise
